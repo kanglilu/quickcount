@@ -12,7 +12,10 @@
 }
 
 * { box-sizing: border-box; }
-html { background: var(--paper); }
+html {
+  color-scheme: only light;
+  background: var(--paper);
+}
 body {
   margin: 0;
   color: var(--ink);
@@ -54,11 +57,42 @@ body {
   }
 
   .public-results .public-candidates {
-    height: 35dvh;
+    height: 41dvh;
   }
 
   .public-results .public-tps {
-    height: 25dvh;
+    height: 23dvh;
+  }
+
+  .public-results .public-footer {
+    height: 88px;
+    min-height: 88px;
+    flex: none;
+    grid-template-columns: 46px minmax(0, 1fr) 46px;
+    gap: 0.35rem;
+    padding: 0.35rem 0.6rem;
+  }
+
+  .public-results .public-footer-logo {
+    width: 44px;
+    height: 44px;
+  }
+
+  .public-results .public-footer-copy p:first-child {
+    font-size: 0.6rem;
+    line-height: 0.75rem;
+  }
+
+  .public-results .public-footer-copy p:nth-child(2) {
+    margin-top: 0.2rem;
+    font-size: 0.42rem;
+    line-height: 0.55rem;
+  }
+
+  .public-results .public-footer-copy p:nth-child(3) {
+    margin-top: 0.2rem;
+    font-size: 0.4rem;
+    line-height: 0.5rem;
   }
 }
 button, select, input { font: inherit; }
