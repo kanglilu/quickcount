@@ -5,6 +5,21 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { Candidate, GolputTotal, Tps, VoteTotal } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/client";
 
+type DashboardClientProps = {
+  electionId: string;
+  candidates: Candidate[];
+  tpsRows: Tps[];
+  initialTotals: VoteTotal[];
+  initialGolputTotals: GolputTotal[];
+  pollUrl?: string;
+  standalone?: boolean;
+};
+
+type PublicResultsPayload = {
+  totals: VoteTotal[];
+  golputTotals: GolputTotal[];
+};
+
 function subscribeMobile(callback: () => void) {
   const query = window.matchMedia("(max-width: 767px)");
   query.addEventListener("change", callback);
@@ -15,7 +30,7 @@ function getMobileSnapshot() {
   return window.matchMedia("(max-width: 767px)").matches;
 }
 
-export function DashboardClient({ electionId, candidates, tpsRows, initialTotals, initialGolputTotals }: { electionId: string; candidates: Candidate[]; tpsRows: Tps[]; initialTotals: VoteTotal[]; initialGolputTotals: GolputTotal[] }) {
+export function DashboardClient({ electionId, candidates, tpsRows, initialTotals, initialGolputTotals, pollUrl, standalone = false }: DashboardClientProps) {
   const [totals, setTotals] = useState(initialTotals);
   const [golputTotals, setGolputTotals] = useState(initialGolputTotals);
   const [activeSlide, setActiveSlide] = useState(0);
@@ -26,6 +41,31 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
   const visibleSlide = activeSlide % Math.max(slides.length, 1);
 
   useEffect(() => {
+    if (pollUrl) {
+      let cancelled = false;
+      const refresh = async () => {
+        try {
+          const response = await fetch(pollUrl);
+          if (!response.ok) return;
+          const payload = await response.json() as PublicResultsPayload;
+          if (!cancelled) {
+            setTotals(payload.totals);
+            setGolputTotals(payload.golputTotals);
+          }
+        } catch {
+          // Keep the last valid snapshot when the viewer temporarily loses connection.
+        }
+      };
+      const timer = window.setInterval(() => { void refresh(); }, 15_000);
+      const handleVisibility = () => { if (document.visibilityState === "visible") void refresh(); };
+      document.addEventListener("visibilitychange", handleVisibility);
+      return () => {
+        cancelled = true;
+        window.clearInterval(timer);
+        document.removeEventListener("visibilitychange", handleVisibility);
+      };
+    }
+
     const voteChannel = supabase.channel(`dashboard-${electionId}`).on("postgres_changes", { event: "UPDATE", schema: "public", table: "vote_totals", filter: `election_id=eq.${electionId}` }, (payload) => {
       const row = payload.new as VoteTotal;
       setTotals((current) => current.map((item) => item.tps_id === row.tps_id && item.candidate_id === row.candidate_id ? row : item));
@@ -35,7 +75,7 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
       setGolputTotals((current) => current.map((item) => item.tps_id === row.tps_id ? row : item));
     }).subscribe();
     return () => { void supabase.removeChannel(voteChannel); void supabase.removeChannel(golputChannel); };
-  }, [electionId, supabase]);
+  }, [electionId, pollUrl, supabase]);
 
   useEffect(() => {
     if (slides.length <= 1) return;
@@ -51,7 +91,7 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
     ? `TPS ${currentSlide[0].tps_number}–${currentSlide[currentSlide.length - 1].tps_number}`
     : "TPS";
 
-  return <main className="mx-auto flex min-h-[calc(100dvh-5.25rem)] w-full max-w-[1440px] flex-col gap-2 overflow-x-hidden px-2 pt-2 pb-0 md:min-h-[calc(100dvh-6.25rem)] md:gap-3 md:px-4 md:pt-3 md:pb-0">
+  return <main className={`mx-auto flex w-full max-w-[1440px] flex-col gap-2 overflow-x-hidden px-2 pt-2 pb-0 md:gap-3 md:px-4 md:pt-3 md:pb-0 ${standalone ? "min-h-dvh" : "min-h-[calc(100dvh-5.25rem)] md:min-h-[calc(100dvh-6.25rem)]"}`}>
     <header className="-mx-2 grid w-[calc(100%+1rem)] shrink-0 grid-cols-[64px_minmax(0,1fr)_64px] items-center gap-2 border-b-4 border-[#3f73ad] bg-white px-2 py-2 md:-mx-4 md:w-[calc(100%+2rem)] md:grid-cols-[110px_minmax(0,1fr)_110px] md:gap-5 md:px-6 md:py-3">
       <Image src="/cibening_logo.png" width={110} height={110} priority alt="Logo Desa Cibening" className="h-[62px] w-[64px] object-contain md:h-[92px] md:w-[110px]" />
       <div className="min-w-0 text-center">
