@@ -22,5 +22,5 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="id" className={manrope.variable}><body>{children}</body></html>;
+  return <html lang="id" className={manrope.variable} suppressHydrationWarning><body>{children}</body></html>;
 }

@@ -113,20 +113,17 @@ export function CountClient({ userId, tps, candidates, initialTotals, initialGol
 
   useEffect(() => {
     const reportCurrentState = () => {
-      const active = document.visibilityState === "visible" && navigator.onLine;
-      void reportPresence(active);
+      if (navigator.onLine) void reportPresence(true);
     };
     reportCurrentState();
     const heartbeat = window.setInterval(reportCurrentState, 20_000);
     const handleVisibility = () => reportCurrentState();
-    const handleBeforeUnload = () => { void reportPresence(false); };
     document.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("online", reportCurrentState);
     return () => {
       window.clearInterval(heartbeat);
       document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      void reportPresence(false);
+      window.removeEventListener("online", reportCurrentState);
     };
   }, [reportPresence]);
 
@@ -180,6 +177,18 @@ export function CountClient({ userId, tps, candidates, initialTotals, initialGol
     void syncQueue();
   }
 
+  async function clearFailedEvents() {
+    const failedEvents = await offlineDb.pending_vote_events
+      .where("owner_user_id").equals(userId)
+      .and((item) => item.status === "failed")
+      .toArray();
+    if (failedEvents.length > 0) {
+      await offlineDb.pending_vote_events.bulkDelete(failedEvents.map((event) => event.id));
+    }
+    setWarning("");
+    await refreshQueue();
+  }
+
   const activeQueue = queued.filter((item) => item.status !== "failed");
   const pendingCount = activeQueue.length;
   const failedCount = queued.filter((item) => item.status === "failed").length;
@@ -198,34 +207,33 @@ export function CountClient({ userId, tps, candidates, initialTotals, initialGol
       : { color: "bg-white text-black border-neutral-300", dot: "●", text: "Online — semua data tersinkron" };
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-5 pb-12">
-      <div className={`mb-5 rounded-xl border p-3 text-sm font-bold ${status.color}`} aria-live="polite">{status.dot} {status.text}</div>
-      {(warning || failedCount > 0) && <div role="alert" className="mb-5 rounded-xl border border-red-300 bg-red-50 p-4 font-bold text-red-900">{warning || `${failedCount} event ditolak dan tidak dihitung.`}</div>}
-      <div className="mb-5 flex items-end justify-between">
-        <div><p className="text-sm font-bold uppercase tracking-wider text-neutral-500">Penghitungan</p><h1 className="text-3xl font-black">{tps.name}</h1></div>
-        <p className="text-right text-sm text-neutral-600">Pending sync<br/><strong className="text-xl text-neutral-900">{pendingCount}</strong></p>
+    <main className="mx-auto flex h-[calc(100dvh-5.25rem)] w-full max-w-5xl flex-col gap-2 overflow-hidden px-2 py-2 md:h-[calc(100dvh-6.25rem)] md:gap-3 md:px-4 md:py-3">
+      <div className="flex shrink-0 items-center justify-between rounded-2xl bg-black px-4 py-2 text-white">
+        <div><p className="text-[9px] font-bold uppercase tracking-[.16em] text-white/55">Penghitungan</p><h1 className="text-xl font-black leading-none md:text-2xl">{tps.name}</h1></div>
+        <div className="flex items-center gap-5 text-right"><div><p className="text-[9px] font-bold uppercase tracking-wider text-white/55">Pending</p><p className="text-xl font-black leading-none tabular-nums">{pendingCount}</p></div><div><p className="text-[9px] font-bold uppercase tracking-wider text-white/55">Total</p><p className="text-2xl font-black leading-none tabular-nums md:text-3xl">{grandTotal}</p></div></div>
       </div>
-      <div className="space-y-5">
+      <div className={`shrink-0 rounded-xl border px-3 py-2 text-center text-xs font-bold md:text-sm ${status.color}`} aria-live="polite">{status.dot} {status.text}</div>
+      {(warning || failedCount > 0) && <div role="alert" className="flex shrink-0 items-center justify-between gap-3 rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-xs font-bold text-red-900"><span>{warning || `${failedCount} event ditolak dan tidak dihitung.`}</span><button type="button" onClick={() => void clearFailedEvents()} className="shrink-0 rounded-lg bg-red-700 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white">Bersihkan</button></div>}
+
+      <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 md:gap-4">
         {candidates.map((candidate) => {
           const isCandidateOne = candidate.candidate_number === 1;
           return (
-          <section key={candidate.id} className="rounded-2xl border border-[var(--line)] bg-white p-5 shadow-sm">
-            <p className="text-sm font-black uppercase tracking-[.16em] text-black">Nomor Urut {candidate.candidate_number}</p>
-            <h2 className="mt-1 text-xl font-black">{candidate.candidate_name}</h2>
-            <p className="my-5 text-5xl font-black tabular-nums">{displayedTotals[candidate.id] ?? 0} <span className="text-lg text-neutral-500">suara</span></p>
-            <button onClick={() => void enqueue(candidate, 1)} className={`h-24 w-full rounded-2xl text-2xl font-black text-white shadow-[0_6px_0_#101010] active:translate-y-1 active:shadow-none ${isCandidateOne ? "bg-[#c44848]" : "bg-[#3f73ad]"}`}>+1 SUARA</button>
-            <button onClick={() => setCorrection(candidate)} className="mt-4 h-12 w-full rounded-xl border-2 border-neutral-300 font-bold text-neutral-700">Koreksi -1</button>
+          <section key={candidate.id} className="flex min-h-0 flex-col rounded-2xl border border-[var(--line)] bg-white p-3 shadow-sm md:p-5">
+            <div className="flex flex-col items-center text-center"><p className="mb-1 text-[8px] font-black uppercase tracking-[.14em] text-neutral-500 md:text-xs">Nomor Urut</p><span className={`grid h-14 w-14 shrink-0 place-items-center rounded-full text-3xl font-black text-white shadow-md md:h-20 md:w-20 md:text-5xl ${isCandidateOne ? "bg-[#c44848]" : "bg-[#3f73ad]"}`}>{candidate.candidate_number}</span></div>
+            <h2 className="mt-2 min-h-[34px] text-center text-sm font-black uppercase leading-tight md:min-h-[48px] md:text-2xl">{candidate.candidate_name}</h2>
+            <p className="my-2 text-4xl font-black leading-none tabular-nums md:my-4 md:text-6xl">{displayedTotals[candidate.id] ?? 0} <span className="block text-[10px] uppercase tracking-wider text-neutral-500 md:mt-1 md:text-sm">suara</span></p>
+            <button onClick={() => void enqueue(candidate, 1)} className="min-h-[100px] flex-1 rounded-2xl bg-emerald-600 text-xl font-black text-white shadow-[0_6px_0_#064e3b] active:translate-y-1 active:shadow-none md:text-3xl">+1 SUARA</button>
+            <button onClick={() => setCorrection(candidate)} className="mt-3 h-11 shrink-0 rounded-xl bg-red-600 text-sm font-bold text-white shadow-[0_4px_0_#7f1d1d] active:translate-y-1 active:shadow-none md:h-12 md:text-base">Koreksi -1</button>
           </section>
         );})}
-        <section className="rounded-2xl border border-[var(--line)] bg-white p-5 shadow-sm">
-          <p className="text-sm font-black uppercase tracking-[.16em] text-neutral-600">Suara Tidak Sah</p>
-          <h2 className="mt-1 text-xl font-black">GOLPUT</h2>
-          <p className="my-5 text-5xl font-black tabular-nums">{displayedGolputTotal} <span className="text-lg text-neutral-500">suara</span></p>
-          <button onClick={() => void enqueue(null, 1)} className="h-20 w-full rounded-2xl bg-neutral-900 text-2xl font-black text-white shadow-[0_6px_0_#737373] active:translate-y-1 active:shadow-none">+1 GOLPUT</button>
-          <button onClick={() => setCorrection("golput")} className="mt-4 h-12 w-full rounded-xl border-2 border-neutral-300 font-bold text-neutral-700">Koreksi -1</button>
-        </section>
       </div>
-      <div className="mt-5 rounded-2xl bg-[var(--ink)] p-5 text-white"><p className="text-sm font-bold uppercase tracking-wider text-white/60">Total dihitung</p><p className="mt-1 text-4xl font-black tabular-nums">{grandTotal} <span className="text-lg text-white/70">suara</span></p></div>
+
+      <section className="grid h-[104px] shrink-0 grid-cols-[minmax(82px,.7fr)_minmax(0,1.5fr)_76px] items-stretch gap-2 rounded-2xl border border-neutral-300 bg-white p-2 shadow-sm md:h-[116px] md:grid-cols-[minmax(150px,.8fr)_minmax(0,2fr)_130px] md:gap-3 md:p-3">
+        <div className="flex min-w-0 flex-col items-center justify-center rounded-xl bg-amber-100 px-1 text-center md:px-3"><p className="text-[7px] font-black uppercase leading-tight tracking-wider text-amber-900 md:text-xs">Golput TPS Ini</p><p className="mt-1 text-4xl font-black leading-none tabular-nums text-amber-700 md:text-5xl">{displayedGolputTotal}</p></div>
+        <button onClick={() => void enqueue(null, 1)} className="rounded-xl bg-neutral-900 text-lg font-black text-white shadow-[0_5px_0_#737373] active:translate-y-1 active:shadow-none md:text-2xl">+1 GOLPUT</button>
+        <button onClick={() => setCorrection("golput")} className="rounded-xl bg-red-600 text-xs font-bold leading-tight text-white shadow-[0_4px_0_#7f1d1d] active:translate-y-1 active:shadow-none md:text-sm">Koreksi<br/>-1</button>
+      </section>
       {correction && <ConfirmCorrection candidateLabel={correction === "golput" ? "Golput" : `Nomor Urut ${correction.candidate_number}`} onCancel={() => setCorrection(null)} onConfirm={() => { const target = correction; setCorrection(null); void enqueue(target === "golput" ? null : target, -1); }} />}
     </main>
   );
