@@ -25,12 +25,30 @@ body {
 }
 
 .public-results {
+  position: relative;
+  isolation: isolate;
   color-scheme: only light;
-  background: var(--paper);
+  background-color: #ffffff;
+  background-image: linear-gradient(#ffffff, #ffffff);
   color: var(--ink);
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
   forced-color-adjust: none;
+}
+
+.public-results::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #ffffff;
+  background-image: linear-gradient(#ffffff, #ffffff);
+}
+
+.public-results > * {
+  position: relative;
+  z-index: 1;
 }
 
 .public-results header,
@@ -39,13 +57,26 @@ body {
   color-scheme: only light;
 }
 
+.public-results > header,
+.public-results .public-candidates > section,
+.public-results .public-tps article {
+  background-color: #ffffff;
+  background-image: linear-gradient(#ffffff, #ffffff);
+}
+
+.public-results .public-tps {
+  background-color: #f5f5f5;
+  background-image: linear-gradient(#f5f5f5, #f5f5f5);
+}
+
 @media (prefers-color-scheme: dark) {
   .public-results {
     --ink: #101010;
     --paper: #edeee9;
     --panel: #ffffff;
     --line: #d4d4d0;
-    background: #edeee9;
+    background-color: #ffffff;
+    background-image: linear-gradient(#ffffff, #ffffff);
     color: #101010;
   }
 }
