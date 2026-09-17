@@ -61,12 +61,12 @@ body {
   }
 
   .public-results .public-tps {
-    height: 20dvh;
+    height: calc(20dvh + 20px);
   }
 
   .public-results .public-footer {
-    height: 88px;
-    min-height: 88px;
+    height: 68px;
+    min-height: 68px;
     flex: none;
     grid-template-columns: 46px minmax(0, 1fr) 46px;
     gap: 0.35rem;
