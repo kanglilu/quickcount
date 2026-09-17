@@ -91,7 +91,7 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
     ? `TPS ${currentSlide[0].tps_number}–${currentSlide[currentSlide.length - 1].tps_number}`
     : "TPS";
 
-  return <main className={`mx-auto flex w-full max-w-[1440px] flex-col gap-2 overflow-x-hidden px-2 pt-2 pb-0 md:gap-3 md:px-4 md:pt-3 md:pb-0 ${standalone ? "min-h-dvh" : "min-h-[calc(100dvh-5.25rem)] md:min-h-[calc(100dvh-6.25rem)]"}`}>
+  return <main className={`mx-auto flex w-full max-w-[1440px] flex-col gap-2 overflow-x-hidden px-2 pt-2 pb-0 md:gap-3 md:px-4 md:pt-3 md:pb-0 ${standalone ? "h-dvh overflow-y-hidden" : "min-h-[calc(100dvh-5.25rem)] md:min-h-[calc(100dvh-6.25rem)]"}`}>
     <header className="-mx-2 grid w-[calc(100%+1rem)] shrink-0 grid-cols-[64px_minmax(0,1fr)_64px] items-center gap-2 border-b-4 border-[#3f73ad] bg-white px-2 py-2 md:-mx-4 md:w-[calc(100%+2rem)] md:grid-cols-[110px_minmax(0,1fr)_110px] md:gap-5 md:px-6 md:py-3">
       <Image src="/cibening_logo.png" width={110} height={110} priority alt="Logo Desa Cibening" className="h-[62px] w-[64px] object-contain md:h-[92px] md:w-[110px]" />
       <div className="min-w-0 text-center">
@@ -114,7 +114,7 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
       </div>
     </div>
 
-    <div className="grid h-[42dvh] min-h-[300px] max-h-[370px] shrink-0 grid-cols-2 gap-2 md:h-[32dvh] md:min-h-[250px] md:max-h-[320px] md:gap-3">
+    <div className={`grid shrink-0 grid-cols-2 gap-2 md:h-[32dvh] md:min-h-[250px] md:max-h-[320px] md:gap-3 ${standalone ? "h-[38dvh] min-h-0 max-h-none" : "h-[42dvh] min-h-[300px] max-h-[370px]"}`}>
       {candidates.map((candidate) => {
         const total = candidateTotals[candidate.id] ?? 0;
         const percentage = percent(total);
@@ -142,13 +142,13 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
       })}
     </div>
 
-    <section className="flex min-h-[200px] flex-1 flex-col overflow-hidden rounded-2xl border border-neutral-300 bg-neutral-100 py-2 pl-2 pr-3 md:min-h-[220px] md:p-3">
+    <section className={`flex flex-col overflow-hidden rounded-2xl border border-neutral-300 bg-neutral-100 py-2 pl-2 pr-3 md:p-3 ${standalone ? "h-[22dvh] min-h-0 shrink-0" : "min-h-[200px] flex-1 md:min-h-[220px]"}`}>
       <div className="mb-1.5 flex shrink-0 items-center justify-between md:mb-2">
         <div className="min-w-0"><p className="truncate text-[7px] font-extrabold uppercase tracking-[.14em] text-neutral-500 md:text-[9px] md:tracking-[.18em]">Laporan masuk per lokasi</p><h2 className="text-sm font-extrabold leading-tight md:text-base">Rincian Setiap TPS</h2></div>
         <div className="ml-2 hidden shrink-0 text-right md:block"><p className="rounded-full bg-black px-3 py-1 text-xs font-extrabold text-white">Menampilkan {currentRange}</p><p className="mt-1 text-[10px] font-bold tabular-nums text-neutral-500">{visibleSlide + 1}/{Math.max(slides.length, 1)}</p></div>
       </div>
       <div className="relative min-h-0 flex-1 overflow-hidden" aria-live="polite">
-        <div key={visibleSlide} className="tps-slide-enter absolute inset-0 grid grid-cols-3 items-center gap-1.5 md:grid-cols-7 md:gap-2">
+        <div key={visibleSlide} className={`tps-slide-enter absolute inset-0 grid grid-cols-3 gap-1.5 md:grid-cols-7 md:gap-2 ${standalone ? "items-stretch" : "items-center"}`}>
           {currentSlide.map((tps) => {
             const rowValues = candidates.map((candidate) => totals.find((row) => row.tps_id === tps.id && row.candidate_id === candidate.id)?.total ?? 0);
             const golputValue = golputTotals.find((row) => row.tps_id === tps.id)?.total ?? 0;
@@ -163,7 +163,7 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
       </div>
       <div className="mt-2 flex h-2 shrink-0 items-center justify-center gap-1 md:gap-1.5">{slides.map((_, index) => <button key={index} type="button" onClick={() => setActiveSlide(index)} aria-label={`Tampilkan kelompok TPS ${index + 1}`} className={`h-1.5 rounded-full transition-all ${index === visibleSlide ? "w-6 bg-black md:w-8" : "w-2 bg-neutral-300 md:w-3"}`} />)}</div>
     </section>
-    <footer className="-mx-2 mt-auto grid min-h-[210px] w-[calc(100%+1rem)] shrink-0 grid-cols-[68px_minmax(0,1fr)_68px] items-center gap-3 border-y-4 border-[#3f73ad] bg-black px-3 py-6 text-white md:-mx-4 md:min-h-[96px] md:w-[calc(100%+2rem)] md:grid-cols-[68px_minmax(0,1fr)_68px] md:gap-5 md:px-5 md:py-3">
+    <footer className={`-mx-2 mt-auto grid w-[calc(100%+1rem)] shrink-0 grid-cols-[68px_minmax(0,1fr)_68px] items-center gap-3 overflow-hidden border-y-4 border-[#3f73ad] bg-black px-3 py-6 text-white md:-mx-4 md:min-h-[96px] md:w-[calc(100%+2rem)] md:grid-cols-[68px_minmax(0,1fr)_68px] md:gap-5 md:px-5 md:py-3 ${standalone ? "min-h-0 flex-1" : "min-h-[210px]"}`}>
       <Image src="/cibening_logo_white.png" width={68} height={68} alt="Logo Desa Cibening" className="h-16 w-16 object-contain" />
       <div className="min-w-0 text-center uppercase md:-translate-y-[9px]">
         <p className="text-xs font-extrabold tracking-[.12em] text-white md:text-sm md:tracking-[.16em]">Media Center Gaskeun</p>
