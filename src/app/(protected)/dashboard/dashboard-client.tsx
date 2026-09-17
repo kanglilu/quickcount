@@ -161,7 +161,7 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
           })}
         </div>
       </div>
-      <div className="mt-2 flex h-2 shrink-0 items-center justify-center gap-1 md:gap-1.5">{slides.map((_, index) => <button key={index} type="button" onClick={() => setActiveSlide(index)} aria-label={`Tampilkan kelompok TPS ${index + 1}`} className={`h-1.5 rounded-full transition-all ${index === visibleSlide ? "w-6 bg-black md:w-8" : "w-2 bg-neutral-300 md:w-3"}`} />)}</div>
+      <div className={`mt-2 h-2 shrink-0 items-center justify-center gap-1 md:gap-1.5 ${standalone ? "hidden md:flex" : "flex"}`}>{slides.map((_, index) => <button key={index} type="button" onClick={() => setActiveSlide(index)} aria-label={`Tampilkan kelompok TPS ${index + 1}`} className={`h-1.5 rounded-full transition-all ${index === visibleSlide ? "w-6 bg-black md:w-8" : "w-2 bg-neutral-300 md:w-3"}`} />)}</div>
     </section>
     <footer className={`-mx-2 mt-auto grid w-[calc(100%+1rem)] shrink-0 grid-cols-[68px_minmax(0,1fr)_68px] gap-3 overflow-hidden border-y-4 border-[#3f73ad] bg-black text-white md:-mx-4 md:min-h-[96px] md:w-[calc(100%+2rem)] md:grid-cols-[68px_minmax(0,1fr)_68px] md:items-center md:gap-5 md:px-5 md:py-3 ${standalone ? "public-footer min-h-0 flex-1 items-start px-3 pb-6 pt-3" : "min-h-[210px] items-center px-3 py-6"}`}>
       <Image src="/cibening_logo_white.png" width={68} height={68} alt="Logo Desa Cibening" className="public-footer-logo h-16 w-16 object-contain" />

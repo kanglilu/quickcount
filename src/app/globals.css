@@ -57,11 +57,11 @@ body {
   }
 
   .public-results .public-candidates {
-    height: 41dvh;
+    height: 46dvh;
   }
 
   .public-results .public-tps {
-    height: 23dvh;
+    height: 20dvh;
   }
 
   .public-results .public-footer {
