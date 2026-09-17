@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #101010;
+  --paper: #edeee9;
+  --panel: #ffffff;
+  --accent: #ffffff;
+  --accent-ink: #101010;
+  --amber: #d97706;
+  --red: #b42318;
+  --line: #d4d4d0;
+}
+
+* { box-sizing: border-box; }
+html { background: var(--paper); }
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--font-manrope), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button, select, input { font: inherit; }
+button { touch-action: manipulation; font-weight: 700; }
+strong, b, h1, h2, h3 { font-weight: 800; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 3px solid #101010;
+  outline-offset: 2px;
+}
+
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes tps-slide-enter {
+  from {
+    opacity: 0;
+    transform: translateX(22px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.ticker-track {
+  animation: ticker-scroll 22s linear infinite;
+  will-change: transform;
+}
+
+.tps-slide-enter {
+  animation: tps-slide-enter 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
+
+  .tps-slide-enter {
+    animation: none;
+  }
+}
