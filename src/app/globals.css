@@ -20,6 +20,47 @@ body {
   font-family: var(--font-manrope), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+.public-results {
+  color-scheme: only light;
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+}
+
+.public-results header,
+.public-results section,
+.public-results article {
+  color-scheme: only light;
+}
+
+@media (prefers-color-scheme: dark) {
+  .public-results {
+    --ink: #101010;
+    --paper: #edeee9;
+    --panel: #ffffff;
+    --line: #d4d4d0;
+    background: #edeee9;
+    color: #101010;
+  }
+}
+
+@media (max-width: 767px) and (max-height: 700px) {
+  .public-results {
+    gap: 0.25rem;
+    padding-top: 0.25rem;
+  }
+
+  .public-results .public-candidates {
+    height: 35dvh;
+  }
+
+  .public-results .public-tps {
+    height: 25dvh;
+  }
+}
 button, select, input { font: inherit; }
 button { touch-action: manipulation; font-weight: 700; }
 strong, b, h1, h2, h3 { font-weight: 800; }

@@ -91,7 +91,7 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
     ? `TPS ${currentSlide[0].tps_number}–${currentSlide[currentSlide.length - 1].tps_number}`
     : "TPS";
 
-  return <main className={`mx-auto flex w-full max-w-[1440px] flex-col gap-2 overflow-x-hidden px-2 pt-2 pb-0 md:gap-3 md:px-4 md:pt-3 md:pb-0 ${standalone ? "h-dvh overflow-y-hidden" : "min-h-[calc(100dvh-5.25rem)] md:min-h-[calc(100dvh-6.25rem)]"}`}>
+  return <main className={`mx-auto flex w-full max-w-[1440px] flex-col gap-2 overflow-x-hidden px-2 pt-2 pb-0 md:gap-3 md:px-4 md:pt-3 md:pb-0 ${standalone ? "public-results h-dvh overflow-y-hidden" : "min-h-[calc(100dvh-5.25rem)] md:min-h-[calc(100dvh-6.25rem)]"}`}>
     <header className="-mx-2 grid w-[calc(100%+1rem)] shrink-0 grid-cols-[64px_minmax(0,1fr)_64px] items-center gap-2 border-b-4 border-[#3f73ad] bg-white px-2 py-2 md:-mx-4 md:w-[calc(100%+2rem)] md:grid-cols-[110px_minmax(0,1fr)_110px] md:gap-5 md:px-6 md:py-3">
       <Image src="/cibening_logo.png" width={110} height={110} priority alt="Logo Desa Cibening" className="h-[62px] w-[64px] object-contain md:h-[92px] md:w-[110px]" />
       <div className="min-w-0 text-center">
@@ -114,7 +114,7 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
       </div>
     </div>
 
-    <div className={`grid shrink-0 grid-cols-2 gap-2 md:h-[32dvh] md:min-h-[250px] md:max-h-[320px] md:gap-3 ${standalone ? "h-[38dvh] min-h-0 max-h-none" : "h-[42dvh] min-h-[300px] max-h-[370px]"}`}>
+    <div className={`grid shrink-0 grid-cols-2 gap-2 md:h-[32dvh] md:min-h-[250px] md:max-h-[320px] md:gap-3 ${standalone ? "public-candidates h-[36dvh] min-h-0 max-h-none" : "h-[42dvh] min-h-[300px] max-h-[370px]"}`}>
       {candidates.map((candidate) => {
         const total = candidateTotals[candidate.id] ?? 0;
         const percentage = percent(total);
@@ -142,7 +142,7 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
       })}
     </div>
 
-    <section className={`flex flex-col overflow-hidden rounded-2xl border border-neutral-300 bg-neutral-100 py-2 pl-2 pr-3 md:p-3 ${standalone ? "h-[22dvh] min-h-0 shrink-0" : "min-h-[200px] flex-1 md:min-h-[220px]"}`}>
+    <section className={`flex flex-col overflow-hidden rounded-2xl border border-neutral-300 bg-neutral-100 py-2 pl-2 pr-3 md:p-3 ${standalone ? "public-tps h-[24dvh] min-h-0 shrink-0" : "min-h-[200px] flex-1 md:min-h-[220px]"}`}>
       <div className="mb-1.5 flex shrink-0 items-center justify-between md:mb-2">
         <div className="min-w-0"><p className="truncate text-[7px] font-extrabold uppercase tracking-[.14em] text-neutral-500 md:text-[9px] md:tracking-[.18em]">Laporan masuk per lokasi</p><h2 className="text-sm font-extrabold leading-tight md:text-base">Rincian Setiap TPS</h2></div>
         <div className="ml-2 hidden shrink-0 text-right md:block"><p className="rounded-full bg-black px-3 py-1 text-xs font-extrabold text-white">Menampilkan {currentRange}</p><p className="mt-1 text-[10px] font-bold tabular-nums text-neutral-500">{visibleSlide + 1}/{Math.max(slides.length, 1)}</p></div>
@@ -152,7 +152,7 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
           {currentSlide.map((tps) => {
             const rowValues = candidates.map((candidate) => totals.find((row) => row.tps_id === tps.id && row.candidate_id === candidate.id)?.total ?? 0);
             const golputValue = golputTotals.find((row) => row.tps_id === tps.id)?.total ?? 0;
-            return <article key={tps.id} className="flex min-w-0 flex-col rounded-xl border border-neutral-300 bg-white px-1.5 py-1.5 text-center shadow-sm md:p-2">
+            return <article key={tps.id} className={`flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-neutral-300 bg-white text-center shadow-sm md:p-2 ${standalone ? "px-1 py-1" : "px-1.5 py-1.5"}`}>
               <h3 className="text-xs font-extrabold md:text-[clamp(.8rem,1.5vw,1.05rem)]">TPS {tps.tps_number}</h3>
               <div className="my-1 grid min-w-0 grid-cols-2 gap-1 md:my-1.5">{candidates.map((candidate, index) => <div key={candidate.id} className={`min-w-0 rounded-md px-0.5 py-1 text-white md:px-1 ${candidate.candidate_number === 1 ? "bg-[#c44848]" : "bg-[#3f73ad]"}`}><p className="truncate text-[6px] font-bold uppercase opacity-75 md:text-[8px]">No. {candidate.candidate_number}</p><p className="text-base font-extrabold leading-none tabular-nums md:text-lg">{rowValues[index]}</p></div>)}</div>
               <p className="flex min-h-7 items-center justify-center rounded-md bg-neutral-900 px-1 py-1.5 text-[8px] font-extrabold uppercase text-white md:min-h-8 md:text-[10px]">Golput <strong className="ml-1 text-xs tabular-nums md:text-sm">{golputValue}</strong></p>
