@@ -127,7 +127,7 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
           <div className="relative col-start-1 row-start-1 min-h-0 w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50 shadow-md md:h-full md:max-h-[calc(40dvh-38px)] md:self-end md:rounded-t-3xl">
             <Image src={photoSrc} fill sizes="(max-width: 1000px) 180px, 210px" alt={`Foto ${candidate.candidate_name}`} className={isCandidateOne ? "object-cover object-top" : "origin-center translate-y-5 scale-[1.1] object-cover object-top md:translate-y-0 md:scale-100"} />
           </div>
-          <span className={`absolute right-3 top-3 z-10 grid h-14 w-14 place-items-center rounded-full border-4 border-white text-2xl font-extrabold text-white shadow-lg md:hidden ${numberColor}`}>{candidate.candidate_number}</span>
+          <span className={`absolute z-10 grid place-items-center rounded-full border-white font-extrabold text-white shadow-lg md:hidden ${standalone ? "right-2 top-2 h-10 w-10 border-[3px] text-xl" : "right-3 top-3 h-14 w-14 border-4 text-2xl"} ${numberColor}`}>{candidate.candidate_number}</span>
           <div className="col-start-1 row-start-2 flex min-w-0 flex-col py-1 md:col-start-2 md:row-start-1 md:py-2">
             <div className="hidden items-center gap-3 md:flex"><span className={`grid h-14 w-14 shrink-0 place-items-center rounded-full border-4 border-white text-2xl font-extrabold text-white shadow-md ${numberColor}`}>{candidate.candidate_number}</span><p className="font-extrabold uppercase leading-tight tracking-[.15em] text-neutral-500 md:text-[clamp(.6rem,1vw,.8rem)]">Calon Kepala Desa</p></div>
             <h2 className="mt-4 hidden text-[clamp(1.35rem,2.8vw,2.3rem)] font-extrabold uppercase leading-[1.05] md:block">{candidate.candidate_name}</h2>
@@ -142,7 +142,7 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
       })}
     </div>
 
-    <section className={`flex flex-col overflow-hidden rounded-2xl border border-neutral-300 bg-neutral-100 py-2 pl-2 pr-3 md:p-3 ${standalone ? "public-tps h-[24dvh] min-h-0 shrink-0" : "min-h-[200px] flex-1 md:min-h-[220px]"}`}>
+    <section className={`flex flex-col overflow-hidden rounded-2xl border border-neutral-300 bg-neutral-100 md:p-3 ${standalone ? "public-tps h-[24dvh] min-h-0 shrink-0 pb-0 pl-1.5 pr-2 pt-1" : "min-h-[200px] flex-1 py-2 pl-2 pr-3 md:min-h-[220px]"}`}>
       <div className="mb-1.5 flex shrink-0 items-center justify-between md:mb-2">
         <div className="min-w-0"><p className="truncate text-[7px] font-extrabold uppercase tracking-[.14em] text-neutral-500 md:text-[9px] md:tracking-[.18em]">Laporan masuk per lokasi</p><h2 className="text-sm font-extrabold leading-tight md:text-base">Rincian Setiap TPS</h2></div>
         <div className="ml-2 hidden shrink-0 text-right md:block"><p className="rounded-full bg-black px-3 py-1 text-xs font-extrabold text-white">Menampilkan {currentRange}</p><p className="mt-1 text-[10px] font-bold tabular-nums text-neutral-500">{visibleSlide + 1}/{Math.max(slides.length, 1)}</p></div>
@@ -152,11 +152,11 @@ export function DashboardClient({ electionId, candidates, tpsRows, initialTotals
           {currentSlide.map((tps) => {
             const rowValues = candidates.map((candidate) => totals.find((row) => row.tps_id === tps.id && row.candidate_id === candidate.id)?.total ?? 0);
             const golputValue = golputTotals.find((row) => row.tps_id === tps.id)?.total ?? 0;
-            return <article key={tps.id} className={`flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-neutral-300 bg-white text-center shadow-sm md:p-2 ${standalone ? "px-1 py-1" : "px-1.5 py-1.5"}`}>
+            return <article key={tps.id} className={`flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-neutral-300 bg-white text-center shadow-sm md:p-2 ${standalone ? "px-1 py-0.5" : "px-1.5 py-1.5"}`}>
               <h3 className="text-xs font-extrabold md:text-[clamp(.8rem,1.5vw,1.05rem)]">TPS {tps.tps_number}</h3>
               <div className="my-1 grid min-w-0 grid-cols-2 gap-1 md:my-1.5">{candidates.map((candidate, index) => <div key={candidate.id} className={`min-w-0 rounded-md px-0.5 py-1 text-white md:px-1 ${candidate.candidate_number === 1 ? "bg-[#c44848]" : "bg-[#3f73ad]"}`}><p className="truncate text-[6px] font-bold uppercase opacity-75 md:text-[8px]">No. {candidate.candidate_number}</p><p className="text-base font-extrabold leading-none tabular-nums md:text-lg">{rowValues[index]}</p></div>)}</div>
-              <p className="flex min-h-7 items-center justify-center rounded-md bg-neutral-900 px-1 py-1.5 text-[8px] font-extrabold uppercase text-white md:min-h-8 md:text-[10px]">Golput <strong className="ml-1 text-xs tabular-nums md:text-sm">{golputValue}</strong></p>
-              <p className="mt-0.5 border-t border-neutral-200 pt-0.5 text-[8px] font-bold uppercase text-neutral-500 md:pt-1 md:text-[9px]">Total <strong className="ml-0.5 text-xs text-black tabular-nums md:ml-1 md:text-sm">{rowValues.reduce((a, b) => a + b, 0) + golputValue}</strong></p>
+              <p className={`flex items-center justify-center rounded-md bg-neutral-900 px-1 font-extrabold uppercase text-white md:min-h-8 md:py-1.5 md:text-[10px] ${standalone ? "min-h-6 py-1 text-[7px]" : "min-h-7 py-1.5 text-[8px]"}`}>Golput <strong className="ml-1 text-xs tabular-nums md:text-sm">{golputValue}</strong></p>
+              <p className={`mt-0.5 border-t border-neutral-200 pt-0.5 font-bold uppercase text-neutral-500 md:pt-1 md:text-[9px] ${standalone ? "text-[7px]" : "text-[8px]"}`}>Total <strong className="ml-0.5 text-xs text-black tabular-nums md:ml-1 md:text-sm">{rowValues.reduce((a, b) => a + b, 0) + golputValue}</strong></p>
             </article>;
           })}
         </div>
