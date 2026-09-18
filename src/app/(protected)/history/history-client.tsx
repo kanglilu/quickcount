@@ -25,7 +25,7 @@ export function HistoryClient({ initialEvents, candidates, tpsRows }: { initialE
     <div className="mt-6 overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
       {events.length === 0 && <p className="p-6 text-center text-neutral-500">Belum ada suara tercatat.</p>}
       {events.map((event) => <div key={event.id} className="flex items-center justify-between border-b border-[var(--line)] p-4 last:border-0">
-        <div><p className="font-black">{tpsLabels[event.tps_id] ?? "TPS"} · {event.vote_kind === "golput" ? "Golput" : (event.candidate_id ? labels[event.candidate_id] : "Kandidat")}</p><p className="mt-1 text-sm text-neutral-500">{new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", day: "2-digit", month: "short" }).format(new Date(event.created_at))}</p></div>
+        <div><p className="font-black">{tpsLabels[event.tps_id] ?? "TPS"} · {event.vote_kind === "golput" ? "Tidak Sah" : (event.candidate_id ? labels[event.candidate_id] : "Kandidat")}</p><p className="mt-1 text-sm text-neutral-500">{new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", day: "2-digit", month: "short" }).format(new Date(event.created_at))}</p></div>
         <span className={`rounded-lg border px-3 py-2 text-lg font-black ${event.delta > 0 ? "border-black bg-white text-black" : "border-red-200 bg-red-50 text-red-800"}`}>{event.delta > 0 ? "+1" : "-1"}</span>
       </div>)}
     </div>

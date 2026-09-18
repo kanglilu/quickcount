@@ -15,7 +15,7 @@ const eventSchema = z.object({
   client_created_at: z.iso.datetime(),
 }).superRefine((event, context) => {
   if (event.kind === "candidate" && !event.candidate_id) context.addIssue({ code: "custom", message: "Candidate wajib diisi" });
-  if (event.kind === "golput" && event.candidate_id) context.addIssue({ code: "custom", message: "Golput tidak memakai candidate" });
+  if (event.kind === "golput" && event.candidate_id) context.addIssue({ code: "custom", message: "Suara tidak sah tidak memakai kandidat" });
 });
 
 function isPermanentError(code?: string) {
@@ -230,11 +230,11 @@ export function CountClient({ userId, tps, candidates, initialTotals, initialGol
       </div>
 
       <section className="grid h-[104px] shrink-0 grid-cols-[minmax(82px,.7fr)_minmax(0,1.5fr)_76px] items-stretch gap-2 rounded-2xl border border-neutral-300 bg-white p-2 shadow-sm md:h-[116px] md:grid-cols-[minmax(150px,.8fr)_minmax(0,2fr)_130px] md:gap-3 md:p-3">
-        <div className="flex min-w-0 flex-col items-center justify-center rounded-xl bg-amber-100 px-1 text-center md:px-3"><p className="text-[7px] font-black uppercase leading-tight tracking-wider text-amber-900 md:text-xs">Golput TPS Ini</p><p className="mt-1 text-4xl font-black leading-none tabular-nums text-amber-700 md:text-5xl">{displayedGolputTotal}</p></div>
-        <button onClick={() => void enqueue(null, 1)} className="rounded-xl bg-neutral-900 text-lg font-black text-white shadow-[0_5px_0_#737373] active:translate-y-1 active:shadow-none md:text-2xl">+1 GOLPUT</button>
+        <div className="flex min-w-0 flex-col items-center justify-center rounded-xl bg-amber-100 px-1 text-center md:px-3"><p className="text-[7px] font-black uppercase leading-tight tracking-wider text-amber-900 md:text-xs">Tidak Sah TPS Ini</p><p className="mt-1 text-4xl font-black leading-none tabular-nums text-amber-700 md:text-5xl">{displayedGolputTotal}</p></div>
+        <button onClick={() => void enqueue(null, 1)} className="rounded-xl bg-neutral-900 text-base font-black text-white shadow-[0_5px_0_#737373] active:translate-y-1 active:shadow-none md:text-2xl">+1 TIDAK SAH</button>
         <button onClick={() => setCorrection("golput")} className="rounded-xl bg-red-600 text-xs font-bold leading-tight text-white shadow-[0_4px_0_#7f1d1d] active:translate-y-1 active:shadow-none md:text-sm">Koreksi<br/>-1</button>
       </section>
-      {correction && <ConfirmCorrection candidateLabel={correction === "golput" ? "Golput" : `Nomor Urut ${correction.candidate_number}`} onCancel={() => setCorrection(null)} onConfirm={() => { const target = correction; setCorrection(null); void enqueue(target === "golput" ? null : target, -1); }} />}
+      {correction && <ConfirmCorrection candidateLabel={correction === "golput" ? "Tidak Sah" : `Nomor Urut ${correction.candidate_number}`} onCancel={() => setCorrection(null)} onConfirm={() => { const target = correction; setCorrection(null); void enqueue(target === "golput" ? null : target, -1); }} />}
     </main>
   );
 }
