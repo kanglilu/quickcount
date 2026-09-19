@@ -45,7 +45,7 @@ export function LoginForm() {
         <span className="mb-2 block text-sm font-bold">TPS</span>
         <select name="tps" className="h-14 w-full rounded-xl border-2 border-neutral-300 bg-white px-4 text-lg font-bold">
           {witnesses.map(({ tpsNumber, name }) => (
-            <option key={tpsNumber} value={tpsNumber}>TPS {String(tpsNumber).padStart(2, "0")} — {name}</option>
+            <option key={tpsNumber} value={tpsNumber} className="font-bold">TPS {String(tpsNumber).padStart(2, "0")} — {name}</option>
           ))}
         </select>
       </label>
