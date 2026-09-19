@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { PasswordField } from "@/components/password-field";
+import { witnesses } from "@/lib/witnesses";
 
 const loginSchema = z.object({
   tps: z.coerce.number().int().min(1).max(21),
@@ -43,8 +44,8 @@ export function LoginForm() {
       <label className="block">
         <span className="mb-2 block text-sm font-bold">TPS</span>
         <select name="tps" className="h-14 w-full rounded-xl border-2 border-neutral-300 bg-white px-4 text-lg font-bold">
-          {Array.from({ length: 21 }, (_, index) => index + 1).map((number) => (
-            <option key={number} value={number}>TPS {String(number).padStart(2, "0")}</option>
+          {witnesses.map(({ tpsNumber, name }) => (
+            <option key={tpsNumber} value={tpsNumber}>TPS {String(tpsNumber).padStart(2, "0")} — {name}</option>
           ))}
         </select>
       </label>

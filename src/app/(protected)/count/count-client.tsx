@@ -22,7 +22,7 @@ function isPermanentError(code?: string) {
   return Boolean(code && ["P0001", "22023", "23503", "23514"].includes(code));
 }
 
-export function CountClient({ userId, tps, candidates, initialTotals, initialGolputTotal }: { userId: string; tps: Tps; candidates: Candidate[]; initialTotals: VoteTotal[]; initialGolputTotal: number }) {
+export function CountClient({ userId, tps, operatorName, candidates, initialTotals, initialGolputTotal }: { userId: string; tps: Tps; operatorName: string; candidates: Candidate[]; initialTotals: VoteTotal[]; initialGolputTotal: number }) {
   const [serverTotals, setServerTotals] = useState<Record<string, number>>(() => Object.fromEntries(initialTotals.map((row) => [row.candidate_id, row.total])));
   const [serverGolputTotal, setServerGolputTotal] = useState(initialGolputTotal);
   const [queued, setQueued] = useState<PendingVoteEvent[]>([]);
@@ -209,7 +209,7 @@ export function CountClient({ userId, tps, candidates, initialTotals, initialGol
   return (
     <main className="mx-auto flex h-[calc(100dvh-5.25rem)] w-full max-w-5xl flex-col gap-2 overflow-hidden px-2 py-2 md:h-[calc(100dvh-6.25rem)] md:gap-3 md:px-4 md:py-3">
       <div className="flex shrink-0 items-center justify-between rounded-2xl bg-black px-4 py-2 text-white">
-        <div><p className="text-[9px] font-bold uppercase tracking-[.16em] text-white/55">Penghitungan</p><h1 className="text-xl font-black leading-none md:text-2xl">{tps.name}</h1></div>
+        <div><p className="text-[9px] font-bold uppercase tracking-[.16em] text-white/55">Penghitungan</p><h1 className="text-xl font-black leading-none md:text-2xl">{tps.name}</h1><p className="mt-0.5 text-[9px] font-bold uppercase tracking-wider text-white/65 md:text-xs">{operatorName}</p></div>
         <div className="flex items-center gap-5 text-right"><div><p className="text-[9px] font-bold uppercase tracking-wider text-white/55">Pending</p><p className="text-xl font-black leading-none tabular-nums">{pendingCount}</p></div><div><p className="text-[9px] font-bold uppercase tracking-wider text-white/55">Total</p><p className="text-2xl font-black leading-none tabular-nums md:text-3xl">{grandTotal}</p></div></div>
       </div>
       <div className={`shrink-0 rounded-xl border px-3 py-2 text-center text-xs font-bold md:text-sm ${status.color}`} aria-live="polite">{status.dot} {status.text}</div>

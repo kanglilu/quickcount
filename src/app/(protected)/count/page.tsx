@@ -1,6 +1,7 @@
 import { getAuthContext } from "@/lib/auth-context";
 import { CountClient } from "./count-client";
 import { redirect } from "next/navigation";
+import { getWitnessName } from "@/lib/witnesses";
 
 export default async function CountPage() {
   const { supabase, user, profile, tps } = await getAuthContext();
@@ -13,5 +14,5 @@ export default async function CountPage() {
   ]);
   if (candidateError || totalError || golputError) throw new Error("Gagal mengambil data penghitungan.");
 
-  return <CountClient userId={user.id} tps={tps} candidates={candidates ?? []} initialTotals={totals ?? []} initialGolputTotal={golputTotal?.total ?? 0} />;
+  return <CountClient userId={user.id} tps={tps} operatorName={getWitnessName(tps.tps_number)} candidates={candidates ?? []} initialTotals={totals ?? []} initialGolputTotal={golputTotal?.total ?? 0} />;
 }
