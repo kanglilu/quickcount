@@ -6,6 +6,7 @@ import type { Candidate, Tps, VoteTotal } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/client";
 import { offlineDb, type PendingVoteEvent } from "@/lib/offline-db";
 import { ConfirmCorrection } from "@/components/confirm-correction";
+import { getDeviceId } from "@/lib/device-session";
 
 const eventSchema = z.object({
   id: z.uuid(),
@@ -22,6 +23,10 @@ function isPermanentError(code?: string) {
   return Boolean(code && ["P0001", "22023", "23503", "23514"].includes(code));
 }
 
+function isMissingSessionRpc(code?: string, message?: string) {
+  return code === "PGRST202" || Boolean(message?.includes("operator_session") || message?.includes("_event_device"));
+}
+
 export function CountClient({ userId, tps, operatorName, candidates, initialTotals, initialGolputTotal }: { userId: string; tps: Tps; operatorName: string; candidates: Candidate[]; initialTotals: VoteTotal[]; initialGolputTotal: number }) {
   const [serverTotals, setServerTotals] = useState<Record<string, number>>(() => Object.fromEntries(initialTotals.map((row) => [row.candidate_id, row.total])));
   const [serverGolputTotal, setServerGolputTotal] = useState(initialGolputTotal);
@@ -30,7 +35,12 @@ export function CountClient({ userId, tps, operatorName, candidates, initialTota
   const [syncing, setSyncing] = useState(false);
   const [warning, setWarning] = useState("");
   const [correction, setCorrection] = useState<Candidate | "golput" | null>(null);
+  const [sessionState, setSessionState] = useState<"checking" | "ready" | "blocked">("checking");
+  const [sessionCheck, setSessionCheck] = useState(0);
   const syncLock = useRef(false);
+  const deviceIdRef = useRef("");
+  const sessionAuthorizedRef = useRef(false);
+  const legacySessionRef = useRef(false);
   const supabase = useMemo(() => createClient(), []);
 
   const reportPresence = useCallback(async (isOnline: boolean) => {
@@ -44,6 +54,7 @@ export function CountClient({ userId, tps, operatorName, candidates, initialTota
   }, [userId]);
 
   const syncQueue = useCallback(async () => {
+    if (!navigator.onLine || !sessionAuthorizedRef.current) return;
     if (syncLock.current) return;
     syncLock.current = true;
     setSyncing(true);
@@ -66,21 +77,44 @@ export function CountClient({ userId, tps, operatorName, candidates, initialTota
           continue;
         }
 
-        const rpcResult = parsed.data.kind === "golput"
-          ? await supabase.rpc("submit_golput_event", {
-              p_event_id: parsed.data.id,
-              p_delta: parsed.data.delta,
-              p_client_created_at: parsed.data.client_created_at,
-            })
-          : await supabase.rpc("submit_vote_event", {
-              p_event_id: parsed.data.id,
-              p_candidate_id: parsed.data.candidate_id!,
-              p_delta: parsed.data.delta,
-              p_client_created_at: parsed.data.client_created_at,
-            });
+        const rpcResult = legacySessionRef.current
+          ? parsed.data.kind === "golput"
+            ? await supabase.rpc("submit_golput_event", {
+                p_event_id: parsed.data.id,
+                p_delta: parsed.data.delta,
+                p_client_created_at: parsed.data.client_created_at,
+              })
+            : await supabase.rpc("submit_vote_event", {
+                p_event_id: parsed.data.id,
+                p_candidate_id: parsed.data.candidate_id!,
+                p_delta: parsed.data.delta,
+                p_client_created_at: parsed.data.client_created_at,
+              })
+          : parsed.data.kind === "golput"
+            ? await supabase.rpc("submit_golput_event_device", {
+                p_device_id: deviceIdRef.current,
+                p_event_id: parsed.data.id,
+                p_delta: parsed.data.delta,
+                p_client_created_at: parsed.data.client_created_at,
+              })
+            : await supabase.rpc("submit_vote_event_device", {
+                p_device_id: deviceIdRef.current,
+                p_event_id: parsed.data.id,
+                p_candidate_id: parsed.data.candidate_id!,
+                p_delta: parsed.data.delta,
+                p_client_created_at: parsed.data.client_created_at,
+              });
         const { data, error } = rpcResult;
 
         if (error) {
+          if (error.message.includes("SESSION_REPLACED")) {
+            await offlineDb.pending_vote_events.update(event.id, { status: "pending", last_error: error.message });
+            sessionAuthorizedRef.current = false;
+            setSessionState("blocked");
+            setWarning("Sesi akun sudah dipakai perangkat lain. Data lokal belum dikirim dan tetap tersimpan di perangkat ini.");
+            transientFailure = true;
+            break;
+          }
           if (isPermanentError(error.code)) {
             await offlineDb.pending_vote_events.update(event.id, { status: "failed", last_error: error.message });
             setWarning(error.message.includes("NEGATIVE") ? "Koreksi ditolak: total suara tidak boleh negatif." : "Satu suara ditolak server. Cek riwayat dan hubungi koordinator.");
@@ -112,20 +146,94 @@ export function CountClient({ userId, tps, operatorName, candidates, initialTota
   }, [refreshQueue, supabase, userId]);
 
   useEffect(() => {
-    const reportCurrentState = () => {
-      if (navigator.onLine) void reportPresence(true);
+    let cancelled = false;
+    deviceIdRef.current = getDeviceId();
+
+    const claimSession = async () => {
+      if (!navigator.onLine) {
+        sessionAuthorizedRef.current = false;
+        setOnline(false);
+        setSessionState("ready");
+        return;
+      }
+
+      setSessionState("checking");
+      const { data, error } = await supabase.rpc("claim_operator_session", { p_device_id: deviceIdRef.current });
+      if (cancelled) return;
+
+      if (error && isMissingSessionRpc(error.code, error.message)) {
+        legacySessionRef.current = true;
+        sessionAuthorizedRef.current = true;
+        await reportPresence(true);
+        setSessionState("ready");
+        setOnline(true);
+        void syncQueue();
+        return;
+      }
+      if (error) {
+        sessionAuthorizedRef.current = false;
+        setOnline(false);
+        setSessionState("ready");
+        return;
+      }
+      if (data?.[0]?.session_status === "in_use") {
+        sessionAuthorizedRef.current = false;
+        setSessionState("blocked");
+        await refreshQueue();
+        return;
+      }
+
+      legacySessionRef.current = false;
+      sessionAuthorizedRef.current = true;
+      setSessionState("ready");
+      setOnline(true);
+      void syncQueue();
     };
-    reportCurrentState();
-    const heartbeat = window.setInterval(reportCurrentState, 20_000);
-    const handleVisibility = () => reportCurrentState();
+
+    const heartbeat = async () => {
+      if (!navigator.onLine || document.visibilityState !== "visible") return;
+      if (legacySessionRef.current) {
+        await reportPresence(true);
+        return;
+      }
+      if (!sessionAuthorizedRef.current) {
+        await claimSession();
+        return;
+      }
+      const { data, error } = await supabase.rpc("heartbeat_operator_session", { p_device_id: deviceIdRef.current });
+      if (cancelled) return;
+      if (error && isMissingSessionRpc(error.code, error.message)) {
+        legacySessionRef.current = true;
+        await reportPresence(true);
+        return;
+      }
+      if (error) {
+        sessionAuthorizedRef.current = false;
+        setSessionState("blocked");
+        return;
+      }
+      if (data?.[0]?.session_status === "replaced") {
+        sessionAuthorizedRef.current = false;
+        await claimSession();
+      }
+    };
+
+    void claimSession();
+    const heartbeatTimer = window.setInterval(() => { void heartbeat(); }, 20_000);
+    const handleVisibility = () => { if (document.visibilityState === "visible") void heartbeat(); };
+    const handleOnline = () => { setOnline(true); void claimSession(); };
+    const handleOffline = () => { sessionAuthorizedRef.current = false; setOnline(false); };
     document.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("online", reportCurrentState);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
     return () => {
-      window.clearInterval(heartbeat);
+      cancelled = true;
+      window.clearInterval(heartbeatTimer);
       document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("online", reportCurrentState);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
-  }, [reportPresence]);
+  }, [refreshQueue, reportPresence, sessionCheck, supabase, syncQueue]);
 
   useEffect(() => {
     const initialTimer = window.setTimeout(() => { void refreshQueue().then(() => syncQueue()); }, 0);
@@ -161,6 +269,7 @@ export function CountClient({ userId, tps, operatorName, candidates, initialTota
   }, [supabase, tps.id]);
 
   async function enqueue(candidate: Candidate | null, delta: 1 | -1) {
+    if (sessionState === "blocked") return;
     setWarning("");
     const item: PendingVoteEvent = {
       id: crypto.randomUUID(),
@@ -199,6 +308,16 @@ export function CountClient({ userId, tps, operatorName, candidates, initialTota
   const localGolputDelta = activeQueue.filter((event) => event.kind === "golput").reduce((sum, event) => sum + event.delta, 0);
   const displayedGolputTotal = Math.max(0, serverGolputTotal + localGolputDelta);
   const grandTotal = Object.values(displayedTotals).reduce((sum, total) => sum + total, 0) + displayedGolputTotal;
+
+  if (sessionState !== "ready") {
+    return <main className="grid h-[calc(100dvh-5.25rem)] place-items-center px-5 md:h-[calc(100dvh-6.25rem)]">
+      <section className={`w-full max-w-md rounded-3xl border-2 p-6 text-center shadow-lg ${sessionState === "blocked" ? "border-red-300 bg-red-50" : "border-neutral-300 bg-white"}`}>
+        <p className="text-xs font-black uppercase tracking-[.18em] text-neutral-500">{tps.name} · {operatorName}</p>
+        <h1 className="mt-3 text-2xl font-black">{sessionState === "blocked" ? "Akun sedang dipakai perangkat lain" : "Memeriksa sesi perangkat..."}</h1>
+        {sessionState === "blocked" && <><p className="mt-3 text-sm leading-relaxed text-neutral-700">Perangkat aktif harus offline atau keluar dari browser sekitar 1 menit sebelum akun ini bisa menggantikan sesi.</p><p className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-bold text-neutral-700">{queued.filter((item) => item.status !== "failed").length} data lokal tetap tersimpan di perangkat ini.</p><button type="button" onClick={() => { setSessionState("checking"); setSessionCheck((value) => value + 1); }} className="mt-5 h-12 w-full rounded-xl bg-black font-black text-white">COBA LAGI</button></>}
+      </section>
+    </main>;
+  }
 
   const status = !online
     ? { color: "bg-red-50 text-red-800 border-red-200", dot: "🔴", text: `Offline — ${pendingCount} suara tersimpan di perangkat` }

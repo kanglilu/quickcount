@@ -4,6 +4,7 @@ import { useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getDeviceId } from "@/lib/device-session";
 
 export function AppHeader({ accountLabel, role }: { accountLabel: string; role: string }) {
   const pathname = usePathname();
@@ -21,7 +22,10 @@ export function AppHeader({ accountLabel, role }: { accountLabel: string; role: 
   async function logout() {
     const supabase = createClient();
     if (role === "witness") {
-      await supabase.rpc("report_operator_status", { p_is_online: false, p_current_page: "/count" });
+      const { error } = await supabase.rpc("release_operator_session", { p_device_id: getDeviceId() });
+      if (error?.code === "PGRST202" || error?.message.includes("release_operator_session")) {
+        await supabase.rpc("report_operator_status", { p_is_online: false, p_current_page: "/count" });
+      }
     }
     await supabase.auth.signOut();
     router.replace("/login");

@@ -51,6 +51,12 @@ export type Database = {
         Update: { is_online?: boolean; current_page?: string; last_seen_at?: string };
         Relationships: [];
       };
+      operator_sessions: {
+        Row: { user_id: string; tps_id: string; device_id: string; last_seen_at: string; lease_expires_at: string; created_at: string };
+        Insert: { user_id: string; tps_id: string; device_id: string; last_seen_at?: string; lease_expires_at?: string; created_at?: string };
+        Update: { device_id?: string; last_seen_at?: string; lease_expires_at?: string };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -66,6 +72,30 @@ export type Database = {
         Args: { p_is_online: boolean; p_current_page?: string };
         Returns: undefined;
       };
+      claim_operator_session: {
+        Args: { p_device_id: string };
+        Returns: { session_status: string; lease_expires_at: string }[];
+      };
+      heartbeat_operator_session: {
+        Args: { p_device_id: string };
+        Returns: { session_status: string; lease_expires_at: string | null }[];
+      };
+      release_operator_session: {
+        Args: { p_device_id: string };
+        Returns: boolean;
+      };
+      admin_release_operator_session: {
+        Args: { p_tps_id: string };
+        Returns: boolean;
+      };
+      submit_vote_event_device: {
+        Args: { p_device_id: string; p_event_id: string; p_candidate_id: string; p_delta: number; p_client_created_at: string | null };
+        Returns: { event_status: string; new_total: number }[];
+      };
+      submit_golput_event_device: {
+        Args: { p_device_id: string; p_event_id: string; p_delta: number; p_client_created_at: string | null };
+        Returns: { event_status: string; new_total: number }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
@@ -77,3 +107,4 @@ export type Tps = Database["public"]["Tables"]["tps"]["Row"];
 export type VoteTotal = Database["public"]["Tables"]["vote_totals"]["Row"];
 export type GolputTotal = Database["public"]["Tables"]["golput_totals"]["Row"];
 export type OperatorStatus = Database["public"]["Tables"]["operator_status"]["Row"];
+export type OperatorSession = Database["public"]["Tables"]["operator_sessions"]["Row"];
